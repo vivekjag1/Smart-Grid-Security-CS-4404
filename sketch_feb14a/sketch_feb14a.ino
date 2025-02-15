@@ -308,8 +308,29 @@ int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
 }
 
 void server_psem_logon(uint8_t userID, uint8_t user){
+  //recieve the packet (this also verifys the checksum)
+  //if the packet recieve method is fine then do nothing and just print that the logon was successful 
+  //if not do nothing and print tht it didn't work 
+  int res = 0;
+  if(res = recv_psem_pkt()){
+    //for testing: 
+    //Serial.println("Recieved logon packet"); 
+    return 1; 
+  }
+  else{ 
+    //for testing: 
+    //Serial.println("Logon failed"); 
+    return 0; 
+
+  }
+
+
+
+
+
   
 }
+
 
 
 //function to send a psem read request

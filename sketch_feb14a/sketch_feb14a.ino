@@ -2,25 +2,34 @@
 #include "math.h"
 
 uint8_t psem_ctrl_byte = 0x00; //ctrl_byte starts as zero, but can be toggled accordingly
+uint8_t recv_buf[RECV_BUFSIZE]; //global buffer for receiving a PSEM packet
+uint16_t recv_buf_sz; //global index for above recv_buf buffer
 
 void setup() {
   //Configure serial drivers
   Serial.begin(PSEM_DEFAULT_BAUD);
-  Serial1.begin(PSEM_DEFAULT_BAUD);
+  //Serial1.begin(PSEM_DEFAULT_BAUD);
   Serial.write("\n\n\n");
   //Serial1.begin(psem_default_baud) save for when we hook up to listener
 
   //handler function for psem_read
-  psem_read();
+  //IMPORTANT: Right now I'm just changing this based on whichever one I want to test in debug output (Serial calls that output to COM9)
+  client_psem_read();
+  //server_psem_read();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  //put your main code here, to run repeatedly:
     
+  //TODO: Make a state machine !!!
 }
 
-//Helper function to print serial data on the TX line
+//-------------------------HELPER FUNCTIONS-------------------------//
+
+//Helper function to print serial data on the TX line (like a debug console, read important note in psem_tx)
 void print_tx(uint8_t* buf, uint16_t buf_size) {
+  
+  //Write each byte of the buffer to serial output
   Serial.write("TX: ");
   for(int i = 0; i < buf_size; i++) {
     if((i != 0) && (i % 16 == 0)) {
@@ -32,18 +41,35 @@ void print_tx(uint8_t* buf, uint16_t buf_size) {
   Serial.write("\n");
 }
 
-//Function to send serial TX data, Serial.write() is a blocking function
+//Helper function to send serial TX data, Serial.write() is a blocking function
 int psem_tx(uint8_t* buf, uint16_t buf_size) {
-  print_tx(buf, buf_size); //IMPORTANT !!! use print_tx for when we want to print something to a debug console (COM9) when dealing with another serial interface for UART (Serial1)
+
+  //IMPORTANT: use print_tx for when we want to print something to a debug !!!
+  //console (COM9) when dealing with another serial interface for UART (Serial1)
+  print_tx(buf, buf_size);
   //Serial1.write(buf, buf_size);
   return 1;
 }
 
-//function to calculate the CCITT CRC standard (taken from a datasheet online)
+//Helper function to print serial data on the RX line
+void print_rx(uint8_t* buf, uint16_t buf_size) {
+  Serial.write("RX: ");
+  for(int i = 0; i < buf_size; i++) {
+    if((i != 0) && (i % 16 == 0)) {
+      Serial.write("\n    ");
+    }
+    Serial.print(buf[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.write("\n");
+}
+
+//Helper function to calculate the CCITT CRC standard (taken from some datasheet online)
 uint16_t calculate_psem_crc(uint8_t* buf, uint16_t buf_size) {
   int i, byte;
   uint16_t crc = 0;
   unsigned short C;
+  
   for (byte = 1; byte <= buf_size; byte ++, buf ++) {
     C = ((crc >> 8) ^ *buf) << 8;
     for (i = 0; i < 8; i++) {
@@ -57,8 +83,21 @@ uint16_t calculate_psem_crc(uint8_t* buf, uint16_t buf_size) {
   return crc;
 }
 
+//Helper function to send a PSEM ACK
+void send_psem_ack() {
+  Serial.write(PSEM_ACK);
+}
+
+//Helper function to send a PSEM NAK
+void send_psem_nak() {
+  Serial.write(PSEM_NAK);
+}
+
+//-------------------------CLIENT SIDE-------------------------//
+
 //Function to wrap contents in a PSEM packet and sends it out over TX
 int send_psem_pkt(uint8_t* buf, uint16_t buf_size) {
+
   //build the full psem_pkt
   uint16_t pkt_size = buf_size + 8;
   uint8_t psem_pkt[pkt_size];
@@ -74,7 +113,6 @@ int send_psem_pkt(uint8_t* buf, uint16_t buf_size) {
     psem_pkt[i + 6] = buf[i];
   }
 
-  //calculate CRC (TODO !!!)
   uint16_t crc = calculate_psem_crc(psem_pkt, (pkt_size - 2));
   psem_pkt[pkt_size - 2] = crc >> 8; //crc hi byte
   psem_pkt[pkt_size - 1] = crc && 0x00FF; //crc lo byte
@@ -99,16 +137,137 @@ int send_psem_read(uint16_t table_id, uint32_t offset, uint16_t octet_count) {
 }
 
 //higher level function to handle client-side psem read interaction (send and recv)
-int psem_read() {
+int client_psem_read() {
   int res = 0;
 
   //Firstly, send the PSEM read packet
   if(res = send_psem_read(SECURITY_TBL_ID, 0, 24)) {
     //Serial.write("Sent PSEM read successfully\n");
-    return 1;
   }
   else {
     //Serial.write("couldn't send PSEM read, error %d\n", res);
+    return 0;
+  }
+}
+
+//-------------------------SERVER SIDE-------------------------//
+
+//TODO: Change the Serial calls here to Serial1 once we can interface w/ the second board !!!
+
+//Helper function to verify a PSEM packet
+int verify_psem_pkt() {
+  
+  //get given CRC from pkt
+  uint16_t in_crc = ((uint16_t)recv_buf[recv_buf_sz - 2] << 8) | recv_buf[recv_buf_sz - 1];
+
+  //calculate CRC ourselves
+  uint16_t crc = calculate_psem_crc(recv_buf, recv_buf_sz - 2);
+
+  //compare CRC
+  if(in_crc != crc) {
+    return 0;
+  }
+  
+  //TODO: add support for sequence bit of ctrl byte (we cant really do this until we have both boards) !!!
+
+  return 1;
+}
+
+//function to receive a psem packet and place it in recv_buf and set recv_buf_sz accordingly
+int recv_psem_pkt() {
+  uint8_t in_byte;
+  uint8_t in_pkt_ctrl;
+  uint8_t in_pkt_seq;
+  uint16_t in_pkt_length;
+
+  recv_pkt:
+
+  //While we have no bytes...
+  recv_buf_sz = 0;
+  while(recv_buf_sz < 1) {
+
+    //If we get a byte...
+    if(Serial.available() > 0) {
+
+      //read the byte
+      in_byte = Serial.read();
+
+      //If we have PSEM_STP, put it into the buffer
+      if(in_byte == PSEM_STP) {
+        recv_buf[recv_buf_sz] = in_byte;
+        recv_buf_sz++;
+      }
+    }
+  }
+
+  //Now that we are reading a PSEM packet, read the remaining 5 pkt header bytes
+  //remaining pkt header bytes are identity, ctrl, seq-number, length hi byte, and length lo byte
+  while(recv_buf_sz < 6) {
+
+    //If we get a byte...
+    if(Serial.available() > 0) {
+
+      //read the byte
+      in_byte = Serial.read();
+      recv_buf[recv_buf_sz] = in_byte;
+      recv_buf_sz++;
+    }
+  }
+
+  //Take note of important header values
+  in_pkt_ctrl = recv_buf[2];
+  in_pkt_seq = recv_buf[3];
+  in_pkt_length = ((uint16_t)recv_buf[4] << 8) | recv_buf[5]; //length hi byte | length lo byte
+
+  //receive the packet data
+  while(recv_buf_sz < (6 + in_pkt_length)) {
+    //If we get a byte...
+    if(Serial.available() > 0) {
+
+      //read the byte
+      in_byte = Serial.read();
+      recv_buf[recv_buf_sz] = in_byte;
+      recv_buf_sz++;
+    }
+  }
+
+  //receive the packet crc
+  while(recv_buf_sz < (6 + in_pkt_length + 2)) {
+    //If we get a byte...
+    if(Serial.available() > 0) {
+
+      //read the byte
+      in_byte = Serial.read();
+      recv_buf[recv_buf_sz] = in_byte;
+      recv_buf_sz++;
+    }
+  }
+
+  //now that we've received the full packet, verify it
+  if(verify_psem_pkt()) {
+    send_psem_ack();
+  }
+  else {
+    send_psem_nak();
+    goto recv_pkt;
+  }
+
+  //print the received packet
+  print_rx(recv_buf, (recv_buf_sz - 1));
+
+  return 1;
+}
+
+//higher level function to handle server-side psem read interaction (recv  send)
+int server_psem_read() {
+  int res = 0;
+
+  //Firstly, receive a packet
+  if(res = recv_psem_pkt()) {
+    //Serial.write("Received PSEM packet successfully\n");
+  }
+  else {
+    //Serial.write("couldn't read PSEM packet, error %d\n", res);
     return 0;
   }
 }

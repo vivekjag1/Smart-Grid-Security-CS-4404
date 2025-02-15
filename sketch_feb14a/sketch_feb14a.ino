@@ -262,11 +262,12 @@ int server_psem_read() {
     return 0;
   }
 }
-
-void client_psem_logon( uint8_t userID, uint8_t user){
+//question for later -- do we just want to use a single user for the purpose of our project, or do we want to support lots of users? 
+//function that acts as an entry point for sending a logon request
+void client_psem_logon(void){
   int res = 0;
   //Firstly, send the PSEM read packet
-  if(res = send_psem_read(LOGON_USERID, LOGON_USER)) {
+  if(res = send_psem_logon(LOGON_USERID, LOGON_USER)) {
     //Serial.write("Sent logon successfully\n");
   }
   else {
@@ -276,6 +277,8 @@ void client_psem_logon( uint8_t userID, uint8_t user){
 
 }
 
+
+//function that actaully creates and sends the logon request 
 int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
   /*
   psuedo code 
@@ -306,7 +309,7 @@ int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
   //send the packet 
   return send_psem_pkt(logon_req, 13); //size 13 because: 1 byte for types, 2 bytes for user id, 10 bytes for user id = 1+2+10 = 13
 }
-
+//server function to recieve the logon request (does nothing else currently)
 void server_psem_logon(uint8_t userID, uint8_t user){
   //recieve the packet (this also verifys the checksum)
   //if the packet recieve method is fine then do nothing and just print that the logon was successful 
@@ -323,12 +326,6 @@ void server_psem_logon(uint8_t userID, uint8_t user){
     return 0; 
 
   }
-
-
-
-
-
-  
 }
 
 

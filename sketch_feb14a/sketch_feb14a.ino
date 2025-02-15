@@ -31,11 +31,11 @@ void print_tx(uint8_t* buf, uint16_t buf_size) {
   
   //Write each byte of the buffer to serial output
   Serial.write("TX: ");
-  for(int i = 0; i < buf_size; i++) {
-    if((i != 0) && (i % 16 == 0)) {
+  for(int i = 0; i < buf_size; i++) { 
+    if((i != 0) && (i % 16 == 0)) { //add a newline every 16 bytes 
       Serial.write("\n    ");
     }
-    Serial.print(buf[i], HEX);
+    Serial.print(buf[i], HEX); //otherwise just print the information in integer array (packet)
     Serial.print(" ");
   }
   Serial.write("\n");
@@ -51,7 +51,7 @@ int psem_tx(uint8_t* buf, uint16_t buf_size) {
   return 1;
 }
 
-//Helper function to print serial data on the RX line
+//Helper function to print serial data on the RX line. Prints data that is being recieved as HEX 
 void print_rx(uint8_t* buf, uint16_t buf_size) {
   Serial.write("RX: ");
   for(int i = 0; i < buf_size; i++) {
@@ -96,45 +96,37 @@ void send_psem_nak() {
 //-------------------------CLIENT SIDE-------------------------//
 
 //Function to wrap contents in a PSEM packet and sends it out over TX
+/*
+workflow 
+1. build the packet using the following butes 
+  1. STP - start of packet (for parsing)
+  2. IDENTITY - 
+*/
 int send_psem_pkt(uint8_t* buf, uint16_t buf_size) {
 
   //build the full psem_pkt
-  uint16_t pkt_size = buf_size + 8;
-  uint8_t psem_pkt[pkt_size];
-  psem_pkt[0] = PSEM_STP; //psem start of packet
+  uint16_t pkt_size = buf_size + 8; //add overhead of the packet size to the size of the buffer to get the packet size 
+  uint8_t psem_pkt[pkt_size]; //declare the packet 
+  psem_pkt[0] = PSEM_STP; //psem start of packet 
   psem_pkt[1] = PSEM_IDENTITY; //psem identity
   psem_pkt[2] = psem_ctrl_byte; //ctrl byte, we'll toggle the seq bit upon successfully receiving a response 
   psem_pkt[3] = 0x00; //seq-number
   psem_pkt[4] = buf_size >> 8; //length hi byte
   psem_pkt[5] = buf_size & 0x00FF; //length lo byte
 
-  //fill psem_pkt data
+  //copy the buffer data into the packet
   for(int i = 0; i < buf_size; i++) {
     psem_pkt[i + 6] = buf[i];
   }
-
+  //calculate checksum and set
   uint16_t crc = calculate_psem_crc(psem_pkt, (pkt_size - 2));
   psem_pkt[pkt_size - 2] = crc >> 8; //crc hi byte
   psem_pkt[pkt_size - 1] = crc && 0x00FF; //crc lo byte
-
+  //send it on the tx line 
   return psem_tx(psem_pkt, pkt_size);
 }
 
-//function to send a psem read request
-int send_psem_read(uint16_t table_id, uint32_t offset, uint16_t octet_count) {
-  //multi-partial request aka "<pread-offset>"
-  uint8_t read_req[8];
-  read_req[0] = READ_OFFSET_REQ; //req header
-  read_req[1] = table_id >> 8; //hi byte
-  read_req[2] = table_id & 0x00FF; //lo byte
-  read_req[3] = offset >> 16; //hi byte
-  read_req[4] = (offset & 0x00FF00) >> 8; //mid byte
-  read_req[5] = offset & 0x0000FF; ///lo byte
-  read_req[6] = octet_count >> 8; //hi byte
-  read_req[7] = octet_count & 0x00FF; //lo byte
 
-  return send_psem_pkt(read_req, 8);
-}
 
 //higher level function to handle client-side psem read interaction (send and recv)
 int client_psem_read() {
@@ -261,7 +253,6 @@ int recv_psem_pkt() {
 //higher level function to handle server-side psem read interaction (recv  send)
 int server_psem_read() {
   int res = 0;
-
   //Firstly, receive a packet
   if(res = recv_psem_pkt()) {
     //Serial.write("Received PSEM packet successfully\n");
@@ -270,4 +261,69 @@ int server_psem_read() {
     //Serial.write("couldn't read PSEM packet, error %d\n", res);
     return 0;
   }
+}
+
+void client_psem_logon( uint8_t userID, uint8_t user){
+  int res = 0;
+  //Firstly, send the PSEM read packet
+  if(res = send_psem_read(LOGON_USERID, LOGON_USER)) {
+    //Serial.write("Sent logon successfully\n");
+  }
+  else {
+    //Serial.write("couldn't send logon, error %d\n", res);
+    return 0;
+  }
+
+}
+
+int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
+  /*
+  psuedo code 
+
+  declare a request as a unit8_t 
+  set the header to type LOGON (1)
+  split the MSB and LSB of the user id (2) 
+  split the user idenetification into 10 8 bit integers (10)
+  send the packet of size 13   
+  */
+
+  //create a new request
+  uint8_t logon_req[13]; 
+  //split the user id into halves because it is a 16 bit word  
+  //hi bit for user id 
+  logon_reg[0] = LOGON; //set type 
+  logon_req[1] = userID >> 8; //set high bits of hte user id 
+  logon_req[2] = userID & 0xFF; //last 8 bits of the user ID 
+  //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value 
+
+  for(int i = 0; i < userArrSize; i++){
+    //if i >= size, fill with zeros 
+    if(i>= userArrSize){
+      logon_req[i] = 0; 
+    }
+    logon_req[i] = user[i]; //otherwise, just set to whatever was passed in as the user identification value 
+  }
+  //send the packet 
+  return send_psem_pkt(logon_req, 13); //size 13 because: 1 byte for types, 2 bytes for user id, 10 bytes for user id = 1+2+10 = 13
+}
+
+void server_psem_logon(uint8_t userID, uint8_t user){
+  
+}
+
+
+//function to send a psem read request
+int send_psem_read(uint16_t table_id, uint32_t offset, uint16_t octet_count) {
+  //multi-partial request aka "<pread-offset>"
+  uint8_t read_req[8];
+  read_req[0] = READ_OFFSET_REQ; //req header
+  read_req[1] = table_id >> 8; //hi byte
+  read_req[2] = table_id & 0x00FF; //lo byte
+  read_req[3] = offset >> 16; //hi byte
+  read_req[4] = (offset & 0x00FF00) >> 8; //mid byte
+  read_req[5] = offset & 0x0000FF; ///lo byte
+  read_req[6] = octet_count >> 8; //hi byte
+  read_req[7] = octet_count & 0x00FF; //lo byte
+
+  return send_psem_pkt(read_req, 8);
 }

@@ -14,3 +14,11 @@
 //read service PSEM info
 #define READ_FULL 0x30
 #define READ_OFFSET_REQ 0x3F
+
+
+//LOGON specific stuff 
+//logon service PSEM info 
+#define LOGON 0x50
+#define LOGON_USERID 1111
+#define LOGON_USER 0x0102030405060708090A
+

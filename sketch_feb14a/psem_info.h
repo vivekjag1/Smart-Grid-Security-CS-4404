@@ -22,3 +22,12 @@
 #define LOGON_USERID 1111
 #define LOGON_USER 0x0102030405060708090A
 
+//ident info 
+#define IDENT 0x20
+#define STANDARD 0x00
+#define VERSION 2 
+#define REV 0 
+
+
+
+

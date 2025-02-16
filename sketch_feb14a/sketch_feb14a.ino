@@ -276,6 +276,25 @@ void client_psem_logon(void){
   }
 
 }
+void client_psem_ident(void){
+  int res = 0;
+  //Firstly, send the PSEM read packet
+  if(res = send_psem_ident()) {
+    //Serial.write("Sent logon successfully\n");
+  }
+  else {
+    //Serial.write("couldn't send logon, error %d\n", res);
+    return 0;
+  }
+
+}
+
+int send_psem_ident(void){
+  uint8_t ident_req[1]; //ident can just have 1 item if we use all the default parameters for version (which we are)
+  ident_req[0] = IDENT; //set type to ident 
+  return send_psem_pkt(ident_req, 1); 
+
+}
 
 
 //function that actaully creates and sends the logon request 
@@ -295,10 +314,8 @@ int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
   //split the user id into halves because it is a 16 bit word  
   //hi bit for user id 
   logon_reg[0] = LOGON; //set type 
-  logon_req[1] = userID >> 8; //set high bits of hte user id 
-  logon_req[2] = userID & 0xFF; //last 8 bits of the user ID 
-  //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value 
-
+  l
+  //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value   
   for(int i = 0; i < userArrSize; i++){
     //if i >= size, fill with zeros 
     if(i>= userArrSize){
@@ -324,8 +341,18 @@ void server_psem_logon(uint8_t userID, uint8_t user){
     //for testing: 
     //Serial.println("Logon failed"); 
     return 0; 
-
   }
+
+}
+
+void server_psem_ident(void){
+  int res = 0; 
+  if((res = recv_psem_pkt())){
+    //for testing
+    //Serial.println("IDENT recieved"); 
+    return 1; 
+  }
+  return 0; 
 }
 
 

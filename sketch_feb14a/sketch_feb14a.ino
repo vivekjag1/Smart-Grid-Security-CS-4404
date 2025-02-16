@@ -267,7 +267,11 @@ int server_psem_read() {
 void client_psem_logon(void){
   int res = 0;
   //Firstly, send the PSEM read packet
-  if(res = send_psem_logon(LOGON_USERID, LOGON_USER)) {
+  uint8_t userArray[13]; 
+  for(int i = 0; i < 13; i++){
+    userArray[i] = i; 
+  }
+  if(res = send_psem_logon(LOGON_USERID, userArray, 13 )) {
     //Serial.write("Sent logon successfully\n");
   }
   else {
@@ -313,8 +317,8 @@ int send_psem_logon(uint16_t userID, uint8_t* user, int userArrSize){
   uint8_t logon_req[13]; 
   //split the user id into halves because it is a 16 bit word  
   //hi bit for user id 
-  logon_reg[0] = LOGON; //set type 
-  l
+  logon_req[0] = LOGON; //set type 
+
   //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value   
   for(int i = 0; i < userArrSize; i++){
     //if i >= size, fill with zeros 

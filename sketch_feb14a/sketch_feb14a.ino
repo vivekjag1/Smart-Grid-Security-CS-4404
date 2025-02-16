@@ -8,13 +8,14 @@ uint16_t recv_buf_sz; //global index for above recv_buf buffer
 void setup() {
   //Configure serial drivers
   Serial.begin(PSEM_DEFAULT_BAUD);
-  //Serial1.begin(PSEM_DEFAULT_BAUD);
+  Serial1.begin(PSEM_DEFAULT_BAUD);
   Serial.write("\n\n\n");
   //Serial1.begin(psem_default_baud) save for when we hook up to listener
 
   //handler function for psem_read
   //IMPORTANT: Right now I'm just changing this based on whichever one I want to test in debug output (Serial calls that output to COM9)
-  client_psem_read();
+  //client_psem_read();
+  client_psem_ident();
   //server_psem_read();
 }
 
@@ -47,7 +48,7 @@ int psem_tx(uint8_t* buf, uint16_t buf_size) {
   //IMPORTANT: use print_tx for when we want to print something to a debug !!!
   //console (COM9) when dealing with another serial interface for UART (Serial1)
   print_tx(buf, buf_size);
-  //Serial1.write(buf, buf_size);
+  Serial1.write(buf, buf_size);
   return 1;
 }
 
@@ -85,12 +86,14 @@ uint16_t calculate_psem_crc(uint8_t* buf, uint16_t buf_size) {
 
 //Helper function to send a PSEM ACK
 void send_psem_ack() {
-  Serial.write(PSEM_ACK);
+  Serial.write(PSEM_ACK); // !!!
+  Serial1.write(PSEM_ACK);
 }
 
 //Helper function to send a PSEM NAK
 void send_psem_nak() {
-  Serial.write(PSEM_NAK);
+  Serial.write(PSEM_NAK); // !!!
+  Serial1.write(PSEM_NAK);
 }
 
 //-------------------------CLIENT SIDE-------------------------//

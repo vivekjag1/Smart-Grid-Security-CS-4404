@@ -182,10 +182,10 @@ int recv_psem_pkt() {
   while(recv_buf_sz < 1) {
 
     //If we get a byte...
-    if(Serial.available() > 0) {
+    if(Serial1.available() > 0) {
 
       //read the byte
-      in_byte = Serial.read();
+      in_byte = Serial1.read();
 
       //If we have PSEM_STP, put it into the buffer
       if(in_byte == PSEM_STP) {
@@ -200,10 +200,10 @@ int recv_psem_pkt() {
   while(recv_buf_sz < 6) {
 
     //If we get a byte...
-    if(Serial.available() > 0) {
+    if(Serial1.available() > 0) {
 
       //read the byte
-      in_byte = Serial.read();
+      in_byte = Serial1.read();
       recv_buf[recv_buf_sz] = in_byte;
       recv_buf_sz++;
     }
@@ -217,10 +217,10 @@ int recv_psem_pkt() {
   //receive the packet data
   while(recv_buf_sz < (6 + in_pkt_length)) {
     //If we get a byte...
-    if(Serial.available() > 0) {
+    if(Serial1.available() > 0) {
 
       //read the byte
-      in_byte = Serial.read();
+      in_byte = Serial1.read();
       recv_buf[recv_buf_sz] = in_byte;
       recv_buf_sz++;
     }
@@ -229,10 +229,10 @@ int recv_psem_pkt() {
   //receive the packet crc
   while(recv_buf_sz < (6 + in_pkt_length + 2)) {
     //If we get a byte...
-    if(Serial.available() > 0) {
+    if(Serial1.available() > 0) {
 
       //read the byte
-      in_byte = Serial.read();
+      in_byte = Serial1.read();
       recv_buf[recv_buf_sz] = in_byte;
       recv_buf_sz++;
     }

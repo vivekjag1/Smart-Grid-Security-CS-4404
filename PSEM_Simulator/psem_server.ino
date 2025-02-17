@@ -3,6 +3,29 @@
 int run_server() {
     recv_psem_pkt();
 
+    uint8_t request_type = recv_buf[6];
+    switch(request_type) {
+        case IDENT:
+            Serial.println("Ident received");
+            break;
+
+        case LOGON:
+            Serial.println("Logon received");
+            break;
+
+        case READ_FULL:
+            Serial.println("Full read received");
+            break;
+
+        case READ_OFFSET_REQ:
+            Serial.println("Offset read received");
+            break;
+
+        default:
+            Serial.println("Unknown request received");
+            break;
+    }
+
     return 0;
 }
 

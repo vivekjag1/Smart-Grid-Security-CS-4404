@@ -18,14 +18,11 @@ void setup() {
     if(PSEM_MODE == CLIENT) {
         run_client();
     }
-}
 
-void loop() {
-    //put your main code here, to run repeatedly:
-        
-    // Only return on critical errors
     if(PSEM_MODE == SERVER) {
-        if(run_server())
-            return;
+        while(1) {
+            if(run_server())
+                break;
+        }
     }
 }

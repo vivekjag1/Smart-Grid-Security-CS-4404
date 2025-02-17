@@ -72,7 +72,7 @@ int send_psem_logon(uint16_t userID, uint8_t *user, int userArrSize) {
     logon_req[0] = LOGON; //set type 
 
     //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value   
-    for(int i = 0; i < userArrSize; i++) {
+    for(int i = 1; i < userArrSize; i++) {
         //if i >= size, fill with zeros 
         if(i>= userArrSize) {
             logon_req[i] = 0; 

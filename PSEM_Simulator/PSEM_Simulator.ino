@@ -26,3 +26,5 @@ void setup() {
         }
     }
 }
+
+void loop() {}

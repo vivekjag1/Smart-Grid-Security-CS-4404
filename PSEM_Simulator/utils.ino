@@ -86,6 +86,103 @@ int send_psem_pkt(uint8_t *buf, uint16_t buf_size) {
     return psem_tx(psem_pkt, pkt_size);
 }
 
+//Helper function to verify a PSEM packet
+int verify_psem_pkt() {
+    //get given CRC from pkt
+    uint16_t in_crc = ((uint16_t)recv_buf[recv_buf_sz - 2] << 8) | recv_buf[recv_buf_sz - 1];
+
+    //calculate CRC ourselves
+    uint16_t crc = calculate_psem_crc(recv_buf, recv_buf_sz - 2);
+
+    //compare CRC
+    if(in_crc != crc)
+        return 0;
+    
+    //TODO: add support for sequence bit of ctrl byte (we cant really do this until we have both boards) !!!
+
+    return 1;
+}
+
+//function to receive a psem packet and place it in recv_buf and set recv_buf_sz accordingly
+int recv_psem_pkt() {
+    uint8_t in_byte;
+    uint8_t in_pkt_ctrl;
+    uint8_t in_pkt_seq;
+    uint16_t in_pkt_length;
+
+    //While we have no bytes...
+    recv_buf_sz = 0;
+    while(recv_buf_sz < 1) {
+        //If we get a byte...
+        if(Serial1.available() > 0) {
+            //read the byte
+            in_byte = Serial1.read();
+
+            //If we have PSEM_STP, put it into the buffer
+            if(in_byte == PSEM_STP) {
+                recv_buf[recv_buf_sz] = in_byte;
+                recv_buf_sz++;
+            }
+        }
+    }
+
+    //Now that we are reading a PSEM packet, read the remaining 5 pkt header bytes
+    //remaining pkt header bytes are identity, ctrl, seq-number, length hi byte, and length lo byte
+    while(recv_buf_sz < 6) {
+        //If we get a byte...
+        if(Serial1.available() > 0) {
+            //read the byte
+            in_byte = Serial1.read();
+            recv_buf[recv_buf_sz] = in_byte;
+            recv_buf_sz++;
+        }
+    }
+
+    //Take note of important header values
+    in_pkt_ctrl = recv_buf[2];
+    in_pkt_seq = recv_buf[3];
+    in_pkt_length = ((uint16_t)recv_buf[4] << 8) | recv_buf[5]; //length hi byte | length lo byte
+
+    //receive the packet data
+    while(recv_buf_sz < (6 + in_pkt_length)) {
+        //If we get a byte...
+        if(Serial1.available() > 0) {
+            //read the byte
+            in_byte = Serial1.read();
+            recv_buf[recv_buf_sz] = in_byte;
+            recv_buf_sz++;
+        }
+    }
+
+    //receive the packet crc
+    while(recv_buf_sz < (6 + in_pkt_length + 2)) {
+        //If we get a byte...
+        if(Serial1.available() > 0) {
+            //read the byte
+            in_byte = Serial1.read();
+            recv_buf[recv_buf_sz] = in_byte;
+            recv_buf_sz++;
+        }
+    }
+
+    //now that we've received the full packet, verify it
+    if(verify_psem_pkt()) {
+        // Once the packet has been verified, send acknowledgement to the sender
+        send_psem_ack();
+    } else {
+        // If the packet fails to verify, notify the sender with a non-acknowledgement
+        // This should be a more descriptive error message, but a NAK is fine for our purposes
+        send_psem_nak();
+        // The function should wait for more input if the packet couldn't be verified
+        recv_psem_pkt();
+    }
+
+    //print the received packet
+    print_rx(recv_buf, recv_buf_sz);
+
+    return 0;
+}
+
 // ------------------------------------------------------ END PSEM DATA FUNCTIONS ------------------------------------------------------
 
 // -------------------------------------------------------- MISC PSEM FUNCTIONS --------------------------------------------------------

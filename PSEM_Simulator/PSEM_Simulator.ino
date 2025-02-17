@@ -16,14 +16,21 @@ void setup() {
     Serial.print("\n\n\n");
 
     if(PSEM_MODE == CLIENT) {
+        Serial.println("Running in Client Mode.");
         run_client();
     }
 
     if(PSEM_MODE == SERVER) {
+        Serial.println("Running in Server Mode.");
+
+        intialize_server();
+
         while(1) {
             if(run_server())
                 break;
         }
+
+        cleanup_server();
     }
 }
 

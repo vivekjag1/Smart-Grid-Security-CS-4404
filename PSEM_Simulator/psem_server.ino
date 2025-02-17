@@ -1,5 +1,18 @@
 //TODO: Change the Serial calls here to Serial1 once we can interface w/ the second board !!!
 
+// Can be a double byte array because the number of total tables remains below 255
+// TODO: Free me at the end
+uint8_t **server_tables = (uint8_t**)malloc(sizeof(uint8_t*) * TOTAL_TABLES);
+
+int intialize_server() {
+    Serial.println("Initializing PSEM Server...");
+    
+    initialize_tables(server_tables);
+
+    Serial.println("Finished initializing PSEM Server.");
+    Serial.println("PSEM Server is Running:\n");
+}
+
 int run_server() {
     // Receive an incoming packet for interpretation
     recv_psem_pkt();
@@ -27,6 +40,14 @@ int run_server() {
     }
 
     return 0;
+}
+
+void cleanup_server() {
+    for(int i = 0; i < TOTAL_TABLES; i++) {
+        free(server_tables[i]);
+    }
+
+    free(server_tables);
 }
 
 int server_psem_ident(void) {
@@ -60,6 +81,35 @@ int server_psem_offset_read() {
     uint16_t table_id = ((uint16_t)recv_buf[7] << 8) | recv_buf[8];
     uint32_t offset = ((uint32_t)recv_buf[9] << 16) | ((uint16_t)((uint16_t)recv_buf[10] & 0x00FF00) << 8) | recv_buf[11];
     uint16_t octet_count = ((uint16_t)recv_buf[12] << 8) | recv_buf[13];
+    // TODO: Free me at some point
+    uint8_t *buffer = (uint8_t*)malloc(sizeof(uint8_t) * (uint8_t)octet_count);
 
+    read_table_entry(server_tables, table_id, offset, octet_count, buffer);
+
+    int8_t cksum = read_data_cksum(octet_count, buffer);
+
+    server_send_read_response(octet_count, buffer, cksum);
+
+    return 0;
+}
+
+int server_send_read_response(uint16_t count, uint8_t *data, int8_t cksum) {
+    // +3 for the size of the count (2 bytes) plus the size of the checksum (1 byte)
+    uint8_t *send_buf = malloc(sizeof(uint8_t) * ((uint8_t)count + 3));
+
+    *send_buf = (uint8_t)(count >> 8);
+    send_buf++;
+    *send_buf = (uint8_t)(count & 0x00FF);
+    send_buf++;
+
+    for(int i = 0; i < (uint8_t)count; i++, send_buf++)
+        *send_buf = data[i];
+
+    *send_buf = cksum;
+
+    send_psem_pkt(send_buf, count + 3);
+
+    free(send_buf);
+    
     return 0;
 }

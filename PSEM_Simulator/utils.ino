@@ -183,6 +183,14 @@ int recv_psem_pkt() {
     return 0;
 }
 
+int8_t read_data_cksum(uint16_t count, uint8_t *data) {
+    int8_t cksum = 0;
+    for(int i = 0; i < (uint8_t)count; i++, data++)
+        cksum += *data;
+
+    return -cksum;
+}
+
 // ------------------------------------------------------ END PSEM DATA FUNCTIONS ------------------------------------------------------
 
 // -------------------------------------------------------- MISC PSEM FUNCTIONS --------------------------------------------------------
@@ -208,3 +216,82 @@ uint16_t calculate_psem_crc(uint8_t *buf, uint16_t buf_size) {
 }
 
 // ------------------------------------------------------ END MISC PSEM FUNCTIONS ------------------------------------------------------
+
+// ------------------------------------------------------- ANSI C12.19 FUNCTIONS -------------------------------------------------------
+
+// Initialize C12.19 tables for use in this exploit
+int initialize_tables(uint8_t **tables) {
+    Serial.println("Initializing PSEM Tables...");
+
+    tables[PASSWORD_TBL_ID] = (uint8_t*)malloc(sizeof(uint8_t) * ENTRY_SIZE * NUM_USERS);
+
+    uint8_t *password_table = (uint8_t*)tables[PASSWORD_TBL_ID];
+
+    // Create entries for users
+    for(int i = 0; i < NUM_USERS; i++) {
+        struct password_entry *pwd_entry = (struct password_entry*)malloc(sizeof(password_entry));
+        pwd_entry->user_id = (uint8_t)(i + 1);
+        // Function to convert a constant char array to the uint8_t array used in the structure
+        create_password((uint8_t*)&(pwd_entry->password), "twentyonecharacterpwd");
+        // 1 = Readonly, 2 = Read/Write, 3 = Admin
+        pwd_entry->access_level = (uint8_t)(i + 1);
+        // Max number of attempts before account is locked
+        pwd_entry->max_attempts = MAX_LOGIN_ATTEMPTS;
+        // If the account has been locked or not
+        pwd_entry->lock_status = 0;
+
+        // C 12.19 compact datetime storage format
+        struct datetime dt;
+        dt.year = 0x07E9; // 2025
+        dt.month = 0x02;  // February
+        dt.day = 0x14;    // 20th
+        dt.hour = 0x05;   // 5AM
+        dt.minute = 0x1E; // 30 minutes
+        dt.second = 0x00; // 0 seconds
+
+        pwd_entry->dt = dt;
+
+        create_table_entry(&(password_table[i * ENTRY_SIZE]), (uint8_t*)pwd_entry);
+
+        Serial.println("Created Password Table Entry.");
+    }
+
+    Serial.println("Done Initializing PSEM Tables.");
+
+    return 0;
+}
+
+// Create a C12.19 table entry (table and entry should both be 32 bytes in length)
+int create_table_entry(uint8_t *table, uint8_t *entry) {
+    for(int i = 0; i < ENTRY_SIZE; i++)
+        table[i] = (uint8_t)entry[i];
+
+    free(entry);
+
+    return 0;
+}
+
+// Assemble a C12.19 password (21 bytes of data)
+int create_password(uint8_t *buf, const char password[21]) {
+    for(int i = 0; i < PASSWORD_LEN; i++, buf++)
+        *buf = (uint8_t)password[i];
+
+    return 0;
+}
+
+// Buffer should be the same size as octet_count
+int read_table_entry(uint8_t **tables, uint16_t table_id, uint32_t offset, uint16_t octet_count, uint8_t *buffer) {
+    // We only need a byte for the table id, offset, and octet_count in this implementation, not multiple
+    uint8_t s_table_id = (uint8_t)table_id;
+    uint8_t s_offset = (uint8_t)offset;
+    uint8_t s_octet_count = (uint8_t)octet_count;
+
+    uint8_t *table = tables[s_table_id + s_offset];
+    for(int i = 0; i < s_octet_count; i++, table++) {
+        buffer[i] = *table;
+    }
+
+    return 0;
+}
+
+// ----------------------------------------------------- END ANSI C12.19 FUNCTIONS -----------------------------------------------------

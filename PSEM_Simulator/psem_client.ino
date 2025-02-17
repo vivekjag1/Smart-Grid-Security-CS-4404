@@ -10,7 +10,7 @@ int client_psem_read() {
     int res = 0;
 
     //Firstly, send the PSEM read packet
-    if(res = send_psem_read(SECURITY_TBL_ID, 0, 24)) {
+    if(res = send_psem_read(PASSWORD_TBL_ID, 0, ENTRY_SIZE * NUM_USERS)) {
         //Serial.write("Sent PSEM read successfully\n");
     } else {
         //Serial.write("couldn't send PSEM read, error %d\n", res);

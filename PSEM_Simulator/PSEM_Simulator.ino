@@ -15,8 +15,9 @@ void setup() {
     //handler function for psem_read
     //IMPORTANT: Right now I'm just changing this based on whichever one I want to test in debug output (Serial calls that output to COM9)
     //client_psem_read();
-    recv_psem_pkt();
-    //server_psem_read();
+    // recv_psem_pkt();
+    client_psem_ident();
+    // server_psem_read();
 }
 
 void loop() {

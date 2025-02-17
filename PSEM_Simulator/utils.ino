@@ -82,8 +82,9 @@ int send_psem_pkt(uint8_t *buf, uint16_t buf_size) {
 
     //calculate checksum and set
     uint16_t crc = calculate_psem_crc(psem_pkt, (pkt_size - 2));
+    Serial.println(crc, HEX);
     psem_pkt[pkt_size - 2] = crc >> 8; //crc hi byte
-    psem_pkt[pkt_size - 1] = crc && 0x00FF; //crc lo byte
+    psem_pkt[pkt_size - 1] = crc & 0x00FF; //crc lo byte
     //send it on the tx line 
     return psem_tx(psem_pkt, pkt_size);
 }

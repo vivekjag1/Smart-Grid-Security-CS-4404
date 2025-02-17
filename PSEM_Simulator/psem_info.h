@@ -27,7 +27,3 @@
 #define STANDARD 0x00
 #define VERSION 2 
 #define REV 0 
-
-
-
-

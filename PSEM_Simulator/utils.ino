@@ -1,12 +1,24 @@
 // -------------------------------------------------------- UTIL ONLY FUNCTIONS --------------------------------------------------------
 
+int psem_await_res() {
+    uint8_t res = PSEM_NAK;
+    if(Serial1.available() > 0)
+        res = Serial1.read();
+
+    return res;
+}
+
 //Helper function to send serial TX data, Serial.write() is a blocking function
 int psem_tx(uint8_t *buf, uint16_t buf_size) {
     //IMPORTANT: use print_tx for when we want to print something to a debug !!!
     //console (COM9) when dealing with another serial interface for UART (Serial1)
     print_tx(buf, buf_size);
     Serial1.write(buf, buf_size);
-    return 1;
+
+    if(psem_await_res() != PSEM_ACK)
+        psem_tx(buf, buf_size);
+
+    return 0;
 }
 
 // ------------------------------------------------------ END UTIL ONLY FUNCTIONS ------------------------------------------------------

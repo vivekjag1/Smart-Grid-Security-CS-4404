@@ -1,7 +1,5 @@
 // TODO: Change this out of its test config
 int run_client() {
-    client_psem_ident();
-    client_psem_logon();
     client_psem_read();
 
     return 1;

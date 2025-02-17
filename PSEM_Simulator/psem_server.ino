@@ -49,11 +49,17 @@ int server_psem_logon() {
 //higher level function to handle server-side psem full read interaction
 int server_psem_full_read() {
     Serial.println("Full read received");
+
     return 0;
 }
 
 //higher level function to handle server-side psem full read interaction
 int server_psem_offset_read() {
     Serial.println("Offset read received");
+
+    uint16_t table_id = ((uint16_t)recv_buf[7] << 8) | recv_buf[8];
+    uint32_t offset = ((uint32_t)recv_buf[9] << 16) | ((uint16_t)((uint16_t)recv_buf[10] & 0x00FF00) << 8) | recv_buf[11];
+    uint16_t octet_count = ((uint16_t)recv_buf[12] << 8) | recv_buf[13];
+
     return 0;
 }

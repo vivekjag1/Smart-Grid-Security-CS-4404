@@ -1,5 +1,8 @@
-#include "psem_info.h"
 #include "math.h"
+
+#include "psem_info.h"
+
+#define PSEM_MODE SERVER
 
 uint8_t psem_ctrl_byte = 0x00; //ctrl_byte starts as zero, but can be toggled accordingly
 uint8_t recv_buf[RECV_BUFSIZE]; //global buffer for receiving a PSEM packet
@@ -9,19 +12,20 @@ void setup() {
     //Configure serial drivers
     Serial.begin(PSEM_DEFAULT_BAUD);
     Serial1.begin(PSEM_DEFAULT_BAUD);
-    Serial.write("\n\n\n");
-    //Serial1.begin(psem_default_baud) save for when we hook up to listener
 
-    //handler function for psem_read
-    //IMPORTANT: Right now I'm just changing this based on whichever one I want to test in debug output (Serial calls that output to COM9)
-    //client_psem_read();
-    // recv_psem_pkt();
-    client_psem_ident();
-    // server_psem_read();
+    Serial.print("\n\n\n");
+
+    if(PSEM_MODE == CLIENT) {
+        run_client();
+    }
 }
 
 void loop() {
     //put your main code here, to run repeatedly:
         
-    //TODO: Make a state machine !!!
+    // Only return on critical errors
+    if(PSEM_MODE == SERVER) {
+        if(run_server())
+            return;
+    }
 }

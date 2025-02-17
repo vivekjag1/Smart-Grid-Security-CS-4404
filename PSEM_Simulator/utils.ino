@@ -48,13 +48,11 @@ void print_rx(uint8_t *buf, uint16_t buf_size) {
 
 //Helper function to send a PSEM ACK
 void send_psem_ack() {
-    Serial.write(PSEM_ACK); // !!!
     Serial1.write(PSEM_ACK);
 }
 
 //Helper function to send a PSEM NAK
 void send_psem_nak() {
-    Serial.write(PSEM_NAK); // !!!
     Serial1.write(PSEM_NAK);
 }
 
@@ -82,7 +80,6 @@ int send_psem_pkt(uint8_t *buf, uint16_t buf_size) {
 
     //calculate checksum and set
     uint16_t crc = calculate_psem_crc(psem_pkt, (pkt_size - 2));
-    Serial.println(crc, HEX);
     psem_pkt[pkt_size - 2] = crc >> 8; //crc hi byte
     psem_pkt[pkt_size - 1] = crc & 0x00FF; //crc lo byte
     //send it on the tx line 

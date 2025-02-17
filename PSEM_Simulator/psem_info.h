@@ -1,5 +1,7 @@
 //general use
 #define RECV_BUFSIZE 256
+#define SERVER 0
+#define CLIENT 1
 
 //general PSEM packet info
 #define SECURITY_TBL_ID 42 // this is the table that holds passwords in PSEM protocol

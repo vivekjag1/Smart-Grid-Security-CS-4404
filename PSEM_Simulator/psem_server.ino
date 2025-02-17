@@ -1,5 +1,11 @@
 //TODO: Change the Serial calls here to Serial1 once we can interface w/ the second board !!!
 
+int run_server() {
+    recv_psem_pkt();
+
+    return 0;
+}
+
 //Helper function to verify a PSEM packet
 int verify_psem_pkt() {
     //get given CRC from pkt
@@ -24,7 +30,6 @@ int recv_psem_pkt() {
     uint8_t in_pkt_seq;
     uint16_t in_pkt_length;
 
-recv_pkt:
     //While we have no bytes...
     recv_buf_sz = 0;
     while(recv_buf_sz < 1) {
@@ -85,11 +90,11 @@ recv_pkt:
         send_psem_ack();
     } else {
         send_psem_nak();
-        goto recv_pkt;
+        recv_psem_pkt();
     }
 
     //print the received packet
-    print_rx(recv_buf, (recv_buf_sz - 1));
+    print_rx(recv_buf, recv_buf_sz);
 
     return 1;
 }
@@ -104,37 +109,6 @@ int server_psem_read() {
         //Serial.write("couldn't read PSEM packet, error %d\n", res);
         return 0;
     }
-}
-
-//function that actaully creates and sends the logon request 
-int send_psem_logon(uint16_t userID, uint8_t *user, int userArrSize) {
-    /*
-    psuedo code 
-
-    declare a request as a unit8_t 
-    set the header to type LOGON (1)
-    split the MSB and LSB of the user id (2) 
-    split the user idenetification into 10 8 bit integers (10)
-    send the packet of size 13   
-    */
-
-    //create a new request
-    uint8_t logon_req[13]; 
-    //split the user id into halves because it is a 16 bit word  
-    //hi bit for user id 
-    logon_req[0] = LOGON; //set type 
-
-    //the user ID can be as large as 10 bytes (80 bits). this is the equivalant of 10 8 bit integers, so we will represent as such. each int is a hex value   
-    for(int i = 0; i < userArrSize; i++) {
-        //if i >= size, fill with zeros 
-        if(i>= userArrSize) {
-            logon_req[i] = 0; 
-        }
-
-        logon_req[i] = user[i]; //otherwise, just set to whatever was passed in as the user identification value 
-    }
-    //send the packet 
-    return send_psem_pkt(logon_req, 13); //size 13 because: 1 byte for types, 2 bytes for user id, 10 bytes for user id = 1+2+10 = 13
 }
 
 //server function to recieve the logon request (does nothing else currently)
@@ -162,20 +136,4 @@ void server_psem_ident(void) {
         return 1; 
     }
     return 0; 
-}
-
-//function to send a psem read request
-int send_psem_read(uint16_t table_id, uint32_t offset, uint16_t octet_count) {
-    //multi-partial request aka "<pread-offset>"
-    uint8_t read_req[8];
-    read_req[0] = READ_OFFSET_REQ; //req header
-    read_req[1] = table_id >> 8; //hi byte
-    read_req[2] = table_id & 0x00FF; //lo byte
-    read_req[3] = offset >> 16; //hi byte
-    read_req[4] = (offset & 0x00FF00) >> 8; //mid byte
-    read_req[5] = offset & 0x0000FF; ///lo byte
-    read_req[6] = octet_count >> 8; //hi byte
-    read_req[7] = octet_count & 0x00FF; //lo byte
-
-    return send_psem_pkt(read_req, 8);
 }

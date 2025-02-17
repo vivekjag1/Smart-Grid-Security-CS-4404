@@ -28,6 +28,9 @@
 #define VERSION 2 
 #define REV 0
 
+// Terminate info
+#define TERMINATE 0x21
+
 // TODO: Terminate for client and server cleanup
 
 // Table info

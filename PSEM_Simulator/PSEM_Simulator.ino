@@ -2,7 +2,7 @@
 
 #include "psem_info.h"
 
-#define PSEM_MODE SERVER
+#define PSEM_MODE CLIENT
 
 uint8_t psem_ctrl_byte = 0x00; //ctrl_byte starts as zero, but can be toggled accordingly
 uint8_t recv_buf[RECV_BUFSIZE]; //global buffer for receiving a PSEM packet
@@ -17,7 +17,21 @@ void setup() {
 
     if(PSEM_MODE == CLIENT) {
         Serial.println("Running in Client Mode.");
-        run_client();
+        Serial.println("PSEM Client is Running:\n");
+        while(1) {
+            if(Serial.available() == 0)
+                continue;
+
+            uint8_t cmd = Serial.read();
+
+            if(run_client(cmd))
+                break;
+            
+            while(Serial.available() > 0)
+                Serial.read();
+        }
+
+        cleanup_client();
     }
 
     if(PSEM_MODE == SERVER) {

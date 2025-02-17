@@ -1,6 +1,9 @@
 // -------------------------------------------------------- UTIL ONLY FUNCTIONS --------------------------------------------------------
 
 int psem_await_res() {
+    while(!Serial1.available())
+        continue;
+
     uint8_t res = PSEM_NAK;
     if(Serial1.available() > 0)
         res = Serial1.read();

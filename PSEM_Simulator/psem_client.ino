@@ -5,7 +5,7 @@ int run_client(uint8_t cmd) {
             return client_psem_ident();
 
         case 'L':
-            return server_psem_logon();
+            return client_psem_logon();
 
         case 'F':
             return client_psem_full_read();

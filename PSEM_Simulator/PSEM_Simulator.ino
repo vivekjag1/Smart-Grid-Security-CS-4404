@@ -2,7 +2,7 @@
 
 #include "psem_info.h"
 
-#define PSEM_MODE CLIENT
+#define PSEM_MODE SERVER
 
 uint8_t psem_ctrl_byte = 0x00; //ctrl_byte starts as zero, but can be toggled accordingly
 uint8_t recv_buf[RECV_BUFSIZE]; //global buffer for receiving a PSEM packet

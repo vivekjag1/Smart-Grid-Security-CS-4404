@@ -128,6 +128,7 @@ int recv_psem_pkt() {
     //While we have no bytes...
     recv_buf_sz = 0;
     while(recv_buf_sz < 1) {
+        // TODO: Switch the order so if statement continues if Serial1.available() == 0
         //If we get a byte...
         if(Serial1.available() > 0) {
             //read the byte
@@ -244,16 +245,16 @@ int initialize_tables(uint8_t **tables) {
 
     // Create entries for users
     for(int i = 0; i < NUM_USERS; i++) {
-        struct password_entry *pwd_entry = (struct password_entry*)malloc(sizeof(password_entry));
-        pwd_entry->user_id = (uint8_t)(i + 1);
+        struct password_entry pwd_entry;
+        pwd_entry.user_id = (uint8_t)(i + 1);
         // Function to convert a constant char array to the uint8_t array used in the structure
-        create_password((uint8_t*)&(pwd_entry->password), "twentyonecharacterpwd");
+        create_password((uint8_t*)&(pwd_entry.password), "twentyonecharacterpwd");
         // 1 = Readonly, 2 = Read/Write, 3 = Admin
-        pwd_entry->access_level = (uint8_t)(i + 1);
+        pwd_entry.access_level = (uint8_t)(i + 1);
         // Max number of attempts before account is locked
-        pwd_entry->max_attempts = MAX_LOGIN_ATTEMPTS;
+        pwd_entry.max_attempts = MAX_LOGIN_ATTEMPTS;
         // If the account has been locked or not
-        pwd_entry->lock_status = 0;
+        pwd_entry.lock_status = 0;
 
         // C 12.19 compact datetime storage format
         struct datetime dt;
@@ -264,9 +265,9 @@ int initialize_tables(uint8_t **tables) {
         dt.minute = 0x1E; // 30 minutes
         dt.second = 0x00; // 0 seconds
 
-        pwd_entry->dt = dt;
+        pwd_entry.dt = dt;
 
-        create_table_entry(&(password_table[i * ENTRY_SIZE]), (uint8_t*)pwd_entry);
+        create_table_entry(&(password_table[i * ENTRY_SIZE]), (uint8_t*)&pwd_entry);
 
         Serial.println("Created Password Table Entry.");
     }
@@ -280,8 +281,6 @@ int initialize_tables(uint8_t **tables) {
 int create_table_entry(uint8_t *table, uint8_t *entry) {
     for(int i = 0; i < ENTRY_SIZE; i++)
         table[i] = (uint8_t)entry[i];
-
-    free(entry);
 
     return 0;
 }

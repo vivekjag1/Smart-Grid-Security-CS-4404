@@ -22,11 +22,9 @@ int run_server() {
     switch(request_type) {
         case IDENT:
             return server_psem_ident();
-            break;
 
         case LOGON:
             return server_psem_logon();
-            break;
 
         case READ_FULL:
             return server_psem_full_read();
@@ -81,8 +79,8 @@ int server_psem_offset_read() {
     uint16_t table_id = ((uint16_t)recv_buf[7] << 8) | recv_buf[8];
     uint32_t offset = ((uint32_t)recv_buf[9] << 16) | ((uint16_t)((uint16_t)recv_buf[10] & 0x00FF00) << 8) | recv_buf[11];
     uint16_t octet_count = ((uint16_t)recv_buf[12] << 8) | recv_buf[13];
-    // TODO: Free me at some point
-    uint8_t *buffer = (uint8_t*)malloc(sizeof(uint8_t) * (uint8_t)octet_count);
+
+    uint8_t buffer[(uint8_t)octet_count] = {0};
 
     read_table_entry(server_tables, table_id, offset, octet_count, buffer);
 
@@ -95,17 +93,16 @@ int server_psem_offset_read() {
 
 int server_send_read_response(uint16_t count, uint8_t *data, int8_t cksum) {
     // +3 for the size of the count (2 bytes) plus the size of the checksum (1 byte)
-    uint8_t *send_buf = malloc(sizeof(uint8_t) * ((uint8_t)count + 3));
+    uint8_t send_buf[(uint8_t)count + 3] = {0};
+    
+    send_buf[0] = (uint8_t)(count >> 8);
+    send_buf[1] = (uint8_t)(count & 0x00FF);
 
-    *send_buf = (uint8_t)(count >> 8);
-    send_buf++;
-    *send_buf = (uint8_t)(count & 0x00FF);
-    send_buf++;
+    int i;
+    for(i = 0; i < (uint8_t)count; i++)
+        send_buf[i+2] = data[i];
 
-    for(int i = 0; i < (uint8_t)count; i++, send_buf++)
-        *send_buf = data[i];
-
-    *send_buf = cksum;
+    send_buf[i+2] = cksum;
 
     send_psem_pkt(send_buf, count + 3);
 

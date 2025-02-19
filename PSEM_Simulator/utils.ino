@@ -31,30 +31,39 @@ int psem_tx(uint8_t *buf, uint16_t buf_size) {
 //Helper function to print serial data on the TX line (like a debug console, read important note in psem_tx)
 void print_tx(uint8_t *buf, uint16_t buf_size) {
     //Write each byte of the buffer to serial output
-    Serial.write("TX: ");
+    Serial.println("---------------------------------------------------");
+    Serial.print("TX: ");
     for(int i = 0; i < buf_size; i++) { 
         if((i != 0) && (i % 16 == 0)) //add a newline every 16 bytes 
-            Serial.write("\n    ");
+            Serial.print("\n    ");
+
+        if(buf[i] < 16)
+            Serial.print(0);
 
         Serial.print(buf[i], HEX); //otherwise just print the information in integer array (packet)
         Serial.print(" ");
     }
-    Serial.write("\n");
+    Serial.println();
+    Serial.println("---------------------------------------------------");
 }
 
 //Helper function to print serial data on the RX line. Prints data that is being recieved as HEX 
 void print_rx(uint8_t *buf, uint16_t buf_size) {
-    Serial.write("RX: ");
+    Serial.println("---------------------------------------------------");
+    Serial.print("RX: ");
 
     for(int i = 0; i < buf_size; i++) {
         if((i != 0) && (i % 16 == 0))
-            Serial.write("\n    ");
+            Serial.print("\n    ");
+
+        if(buf[i] < 16)
+            Serial.print(0);
 
         Serial.print(buf[i], HEX);
         Serial.print(" ");
     }
-
-    Serial.write("\n");
+    Serial.println();
+    Serial.println("---------------------------------------------------");
 }
 
 // -------------------------------------------------------- END PRINT FUNCTIONS --------------------------------------------------------

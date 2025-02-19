@@ -18,7 +18,7 @@ int run_client(uint8_t cmd) {
             return 1;
 
         default:
-            Serial.println("Unknown command received.");
+            Serial.println("\nUnknown command received.\n");
             return 0;
     }
 
@@ -33,11 +33,11 @@ void cleanup_client() {
 int client_psem_ident(void) {
     //Firstly, send the PSEM read packet
     if(send_psem_ident()) {
-        Serial.println("Unable to send PSEM ident request.");
+        Serial.println("\nUnable to send PSEM ident request.\n");
         return 1;
     }
 
-    Serial.println("Successfully sent PSEM ident request.");
+    Serial.println("\nSuccessfully sent PSEM ident request.\n");
 
     return 0;
 }
@@ -60,11 +60,11 @@ int client_psem_logon(void) {
 
     // TODO: This logon function is also arbitrary and should probably prompt the user for some sort of input regarding who is logging on
     if(send_psem_logon(LOGON_USERID, userArray, 13)) {
-        Serial.println("Unable to send PSEM logon request.");
+        Serial.println("\nUnable to send PSEM logon request.\n");
         return 1;
     }
 
-    Serial.println("Successfully sent PSEM logon request.");
+    Serial.println("\nSuccessfully sent PSEM logon request.\n");
 
     return 0;
 }
@@ -111,11 +111,11 @@ int client_psem_full_read() {
 int client_psem_offset_read() {
     //Firstly, send the PSEM read packet
     if(send_psem_read(PASSWORD_TBL_ID, 0, ENTRY_SIZE * NUM_USERS)) {
-        Serial.println("Unable to send PSEM read request.");
+        Serial.println("\nUnable to send PSEM read request.\n");
         return 1;
     }
     
-    Serial.println("Successfully sent PSEM offset read request.");
+    Serial.println("\nSuccessfully sent PSEM offset read request.\n");
 
     // TODO: Need to make sure this is the appropriate response to the read request
     recv_psem_pkt();

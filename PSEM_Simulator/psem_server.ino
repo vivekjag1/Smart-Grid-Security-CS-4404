@@ -9,7 +9,7 @@ int intialize_server() {
     
     initialize_tables(server_tables);
 
-    Serial.println("Finished initializing PSEM Server.");
+    Serial.println("Done Initializing PSEM Server.");
     Serial.println("PSEM Server is Running:\n");
 }
 
@@ -33,7 +33,7 @@ int run_server() {
             return server_psem_offset_read();
 
         default:
-            Serial.println("Unknown PSEM request received.");
+            Serial.println("\nUnknown PSEM request received.\n");
             break;
     }
 
@@ -50,7 +50,7 @@ void cleanup_server() {
 
 int server_psem_ident(void) {
     // No need to do anything else, just receive ident
-    Serial.println("Successfully received PSEM ident request.");
+    Serial.println("\nSuccessfully received PSEM ident request.\n");
 
     return 0;
 }
@@ -60,21 +60,21 @@ int server_psem_logon() {
     //recieve the packet (this also verifies the checksum)
     //if the packet recieve method is fine then do nothing and just print that the logon was successful 
     //if not do nothing and print that it didn't work 
-    Serial.println("Successfully received PSEM logon request.");
+    Serial.println("\nSuccessfully received PSEM logon request.\n");
 
     return 0;
 }
 
 //higher level function to handle server-side psem full read interaction
 int server_psem_full_read() {
-    Serial.println("Successfully received PSEM full read request.");
+    Serial.println("\nSuccessfully received PSEM full read request.\n");
 
     return 0;
 }
 
 //higher level function to handle server-side psem full read interaction
 int server_psem_offset_read() {
-    Serial.println("Successfully received PSEM offset read request.");
+    Serial.println("\nSuccessfully received PSEM offset read request.\n");
 
     uint16_t table_id = ((uint16_t)recv_buf[7] << 8) | recv_buf[8];
     uint32_t offset = ((uint32_t)recv_buf[9] << 16) | ((uint16_t)((uint16_t)recv_buf[10] & 0x00FF00) << 8) | recv_buf[11];

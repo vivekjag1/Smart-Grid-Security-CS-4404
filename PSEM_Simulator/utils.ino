@@ -44,7 +44,7 @@ void print_tx(uint8_t *buf, uint16_t buf_size) {
     // Write each byte of the buffer to serial output
     for(int i = 0; i < buf_size; i++) { 
         if((i != 0) && (i % 16 == 0)) // Add a newline every 16 bytes
-            Serial.print("\n    ");
+            Serial.print("\r\n    ");
 
         if(buf[i] < 16) // Add leading zeros to any bytes below 16 (0-F)
             Serial.print(0);
@@ -65,7 +65,7 @@ void print_rx(uint8_t *buf, uint16_t buf_size) {
     // Write each byte of the buffer to serial output
     for(int i = 0; i < buf_size; i++) {
         if((i != 0) && (i % 16 == 0)) // Add a newline every 16 bytes
-            Serial.print("\n    ");
+            Serial.print("\r\n    ");
 
         if(buf[i] < 16) // Add leading zeros to any bytes below 16 (0-F)
             Serial.print(0);

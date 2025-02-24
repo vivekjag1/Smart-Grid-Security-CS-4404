@@ -6,7 +6,7 @@ Smart grid devices, specifically electrical meters, adhere to the Protocol Speci
 
 C12.19 defines many tables for the operation of a meter, some of which may be exploited, but one stands out in particular as it holds user information. The password table contains user ID numbers, access levels, and, most importantly, passwords. C12.19 provides an option for basic encryption of these passwords in later revisions, but earlier implementations store them as plaintext. Even with encryption, brute-force password cracking may prove useful.
 
-With this, the vulnerability is revealed. Assuming proper access to hardware, a bad actor can wait for a PSEM read request to be sent for the vulnerable password table. The plaintext passwords associated with their user ID numbers can then be intercepted via a "man-in-the-middle" attack. This attack is what this project seeks to simulate.
+With this, the vulnerability is revealed. Assuming proper access to hardware, a bad actor can wait for a PSEM read request to be sent for the vulnerable password table. The plaintext passwords associated with their user ID numbers can then be intercepted via a "man-in-the-middle" attack. Once the password is intercepted, the attacker can send write requests to the server, causing the customer to be unfairly billed. This project simulates this attack. 
 
 ## Required Hardware
 
@@ -21,6 +21,13 @@ With this, the vulnerability is revealed. Assuming proper access to hardware, a 
 - Logic Analyzer monitoring program (typically bundled with the logic analyzer)
 
 ## Hardware Setup
+1. Plug both Arduino boards into a usb port for power and data transfer.
+2. Plug the logic analyzer into a usb port for power and data transfer.
+3. Connect the TX lines of one arduino to the RX line of the other arduino (repeat this step for both boards).
+4. Connect an alligator clip to the bottom of the wire connected to the RX line of the server. 
+5. Connect an alligator clip to the bottom of the wire connected to the RX line of the client. 
+6. Connect a wire to each alligator clip on one end, and to a channel of the logic analyzer on the other end (repeat for both boards).
+
 
 ## Software Setup
 

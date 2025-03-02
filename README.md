@@ -6,7 +6,7 @@ Smart grid devices, specifically electrical meters, adhere to the Protocol Speci
 
 C12.19 defines many tables for the operation of a meter, some of which may be exploited, but one stands out in particular as it holds user information. The password table contains user ID numbers, access levels, and, most importantly, passwords. C12.19 provides an option for basic encryption of these passwords in later revisions, but earlier implementations store them as plaintext. Even with encryption, brute-force password cracking may prove useful.
 
-With this, the vulnerability is revealed. Assuming proper access to hardware, a bad actor can wait for a PSEM read request to be sent for the vulnerable password table. The plaintext passwords associated with their user ID numbers can then be intercepted via a "man-in-the-middle" attack. Once the password is intercepted, the attacker can send write requests to the server, causing the customer to be unfairly billed. This project simulates this attack. 
+With this, the vulnerability is revealed. Assuming proper access to hardware, a bad actor can wait for a PSEM read request to be sent for the vulnerable password table. The plaintext passwords associated with their user ID numbers can then be intercepted. Once the password is intercepted, the attacker can send write requests to the server, causing the customer to be unfairly billed, for instance. This project simulates this attack. 
 
 ## Required Hardware
 
@@ -53,6 +53,8 @@ With this, the vulnerability is revealed. Assuming proper access to hardware, a 
 
 ## Performing the Attack
 
+### [Video Demonstration](https://youtu.be/BXW4Rp9qQCY)
+
 ### Part 1: Ensuring Proper Setup
 
 1. In the client instance serial monitor input, type an upper case "I" and press the "Enter" key
@@ -60,19 +62,30 @@ With this, the vulnerability is revealed. Assuming proper access to hardware, a 
 2. Ensure proper transmission of the packet by observing both the client and server serial monitor outputs
     - The client should display a message stating, "Successfully sent PSEM ident request."
     - The client should additionally display the bytes of the raw, transmitted PSEM packet in hex, preceded by "TX:", and encased between dashed lines
-    - An image of the client's perspective can be seen below:
-    - *insert client ident request image here*
+    - An example of the client's perspective can be seen below:
+   
+        ```
+        ---------------------------------------------------
+        TX: EE 00 00 00 00 01 20 3D 38
+        ---------------------------------------------------
+        Successfully sent PSEM ident request.
+        ```
     - The server should display a message stating, "Successfully received PSEM ident request."
     - The server should additionally display the bytes of the raw, received PSEM packet in hex, preceded by "RX:", and encased between dashed lines
-    - An image of the server's perspective can be seen below:
-    - *insert server ident received image here*
-3. Observe the logic analyzer output
+    - An example of the server's perspective can be seen below:
+   
+        ```
+        ---------------------------------------------------
+        RX: EE 00 00 00 00 01 20 3D 38
+        ---------------------------------------------------
+        Successfully received PSEM ident request.
+        ```
+
+4. Observe the logic analyzer output
     - The raw UART packet containing the ident request should be visible in the output of the logic analyzer software
     - Note One: The data in the RAW UART packet will be different than the raw PSEM packet as UART contains additional protocol overhead with the data
     - Note Two: The logic analyzer output will differ from user to user depending on which device is being used
-    - An example image of the logic analyzer output can be seen below:
-    - *insert example logic analyzer output for ident request here*
-4. Assuming proper setup, the outputs of these three components should match, or closely resemble the described outputs and the attack may continue
+5. Assuming proper setup, the outputs of these three components should match, or closely resemble the described outputs and the attack may continue
 
 ### Part 2: Intercepting Password Table Data
 
@@ -84,8 +97,17 @@ With this, the vulnerability is revealed. Assuming proper access to hardware, a 
         - The bad actor would only have access to a transmission source (wire, optical connection, wireless transmission, etc.)
         - For the sake of this demonstration, the offset read request is isolated and initiated by the user performing the simulation
     - Note Four: Confirmation of the packet's transmission should be oberserved in a similar manner to the PSEM ident request described in Part 1 of this section
-2. *Insert note on logic analyzer output*
-3. *Explain to whomever is running this project what they're seeing*
+2. An exmaple of the offset read request in the logic analyzer can be seen below:
+
+    ```
+    EE 00 00 00 00 63 00 60 01 74 77 65 6E 74 79 6F
+        6E 65 63 68 61 72 61 63 74 65 72 70 77 64 01 03
+        00 E9 07 02 14 05 1E 00 02 74 77 65 6E 74 79 6F
+        6E 65 63 68 61 72 61 63 74 65 72 70 77 64 02 03
+        00 E9 07 02 14 05 1E 00 03 74 77 65 6E 74 79 6F
+        6E 65 63 68 61 72 61 63 74 65 72 70 77 64 03 03
+        00 E9 07 02 14 05 1E 00 C1 14 AA
+    ```
 
 ## Credits
 
